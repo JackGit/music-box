@@ -3,13 +3,29 @@
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+  button {
+    display: block;
+    margin-bottom: 10px;
+  }
+  </style>
 </head>
 <body>
-  <button onclick="playAll()">Play All</button>
   <button onclick="playDing()">Play Ding</button>
+  <button onclick="playAll('horn')">Play horn</button>
+  <button onclick="playAll('key')">Play key</button>
+  <button onclick="playAll('ding')">Play ding</button>
+  <button onclick="playAll('pluck')">Play pluck</button>
+  <button onclick="playAll()">Play All</button>
   <script src="src/assets/js/vconsole.min.js"></script>
   <script>
   window.AudioContext = window.AudioContext || window.webkitAudioContext;
+  var KEYS = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
+  var ROUNDS = [0, 1, 2]
+
+  // google 上每种声音（type）都只给出了11个音符
+  // 并且每种音给出的11个音符不同
+
   var PLUCK_SPRITES = {
       "A#0": [0, 2E3],
       "A#1": [2100, 2E3],
@@ -196,7 +212,6 @@
         })
         sound.sprites = sprite
         sound.buffer = buffer
-        // playThrough(sound)
       }, function (e) {
         console.log('loadAudio error', sound.url, e)
       })
@@ -229,18 +244,51 @@
     playSound(soundObj.buffer, 0, soundObj.sprites[spriteName][0], soundObj.sprites[spriteName][1])
   }
 
-  function playThrough (soundObj) {
-    Object.keys(soundObj.sprites).forEach(function (key, i) {
+  function playKey (soundName, type, keyName) {
+    var soundObj = sounds.filter(function (s) {
+      return s.name === soundName
+    })[0]
+    var spriteName = keyName + type
+    play(soundObj, spriteName)
+  }
+
+  function playAllKeys (soundName, type, interval) {
+    KEYS.forEach(function (key, i) {
       setTimeout(function () {
-        play(soundObj, key)
-      }, i * 400)
+        playKey(soundName, type, key)
+      }, i * interval)
     })
   }
 
-  function playAll () {
-    sounds.forEach(function (sound) {
-      playThrough(sound)
+  function playThrough (sound, interval) {
+    if (typeof sound === 'string') {
+      sound = sounds.filter(function (s) {
+        return s.name === sound
+      })[0]
+    }
+
+    var allTypeKeys = []
+    ROUNDS.forEach(function (round) {
+      KEYS.forEach(function (key) {
+        allTypeKeys.push(key + round)
+      })
     })
+
+    allTypeKeys.forEach(function (key, i) {
+      setTimeout(function () {
+        play(sound, key)
+      }, i * (interval || 400))
+    })
+  }
+
+  function playAll (type) {
+    if (!type) {
+      sounds.forEach(function (sound) {
+        playThrough(sound)
+      })
+    } else {
+      playThrough(type)
+    }
   }
 
   function playDing () {
